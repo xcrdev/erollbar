@@ -49,11 +49,17 @@ encode_trace(Trace, #details{send_args=SendArgs}) ->
     {_, Class} = lists:keyfind(class, 1, Trace),
     {_, Message} = lists:keyfind(message, 1, Trace),
     {_, Description} = lists:keyfind(description, 1, Trace),
-    Exception = encode_content([{<<"class">>, Class},
-                                {<<"message">>, Message},
-                                {<<"description">>, Description}]),
-    [{<<"trace">>, [{<<"frames">>, Frames1}]},
-     {<<"exception">>, Exception}].
+    Exception = case Class of
+        {badmatch, Reason} ->
+            encode_content([{<<"class">>, badmatch},
+                            {<<"message">>, lists:flatten(io_lib:format("~p", [Reason]))},
+                            {<<"description">>, Description}]);
+        _ ->
+            encode_content([{<<"class">>, Class},
+                            {<<"message">>, Message},
+                            {<<"description">>, Description}])
+    end,
+    [{<<"trace">>, [{<<"frames">>, Frames1}, {<<"exception">>, Exception}]}].
 
 encode_message(Message, _Details) ->
     {_, Body} = lists:keyfind(body, 1, Message),
